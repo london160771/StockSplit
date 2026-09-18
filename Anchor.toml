@@ -1,0 +1,43 @@
+[toolchain]
+anchor_version = "0.32.1"
+
+[features]
+resolution = true
+skip-lint = false
+
+[programs.localnet]
+stock_split_phase0 = "9nLrXyjgLTwMxnyBJ2GnKqnHZiu5koYNHrpKXezVGDmm"
+
+[[test.genesis]]
+address = "JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4"
+program = "target/deploy/mock_jupiter_router.so"
+
+# Anchor-managed validators can load these public fixed-address mint snapshots.
+# Plain `pnpm test` does not read Anchor.toml. The reproducible manual harness
+# in scripts/run-local-integration.mjs explicitly passes five --account flags
+# and replaces only their local mint authority with an ephemeral test wallet.
+[[test.validator.account]]
+address = "HfstGSPF1MJsD8hrpYTcPhqT6uxXTvCFSeuBYLsZJ26J"
+filename = "tests/fixtures/devnet-demo-test-usdc.json"
+[[test.validator.account]]
+address = "Cedwf76ynoKGU5jRxHNx2Y1B2b8VNuEEuf2jDevy7L9F"
+filename = "tests/fixtures/devnet-demo-test-nvdax.json"
+[[test.validator.account]]
+address = "7DB6cCsaG1sFvPzX8DUL3GfetHbQyEMYmYHuShdhiNDW"
+filename = "tests/fixtures/devnet-demo-test-aaplx.json"
+[[test.validator.account]]
+address = "AzkzmLNh2SzTTdHnYmaC4GAxiLnngCJkPeLDCNLRbPWm"
+filename = "tests/fixtures/devnet-demo-test-tslax.json"
+[[test.validator.account]]
+address = "8DrsDuwYPsSY8LaLGKpiBFyCkz5bLFzdZAk6kbqKADJ9"
+filename = "tests/fixtures/devnet-demo-test-spyx.json"
+
+[registry]
+url = "https://api.apr.dev"
+
+[provider]
+cluster = "localnet"
+wallet = "~/.config/solana/id.json"
+
+[scripts]
+test = "pnpm exec ts-mocha -p ./tsconfig.json -t 1000000 \"tests/**/*.ts\""

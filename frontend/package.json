@@ -1,0 +1,9 @@
+{
+  "name": "stocksplit-frontend",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "build": "node build.mjs",
+    "dev": "node dev-server.mjs"
+  }
+}

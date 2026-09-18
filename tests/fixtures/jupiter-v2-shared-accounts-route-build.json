@@ -1,0 +1,29 @@
+{
+  "source": "GET https://api.jup.ag/swap/v2/build (keyless capture, 2026-09-15)",
+  "instructionVariant": "SharedAccountsRouteV2",
+  "programId": "JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4",
+  "inputMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+  "outputMint": "So11111111111111111111111111111111111111112",
+  "inAmount": "1000000",
+  "outAmount": "9770217",
+  "quotedOutAmount": "9770217",
+  "slippageBps": 50,
+  "swapInstruction": {
+    "data": "0ZhTk3z+2OkBQEIPAAAAAADpFJUAAAAAADIAAAAAAAIAAACcECcAAZwQJwEC",
+    "fixedAccounts": [
+      { "pubkey": "2MFoS3MPtvyQ4Wh4M9pdfPjz6UhVoNbFbGJAskCPCj3h", "isSigner": false, "isWritable": false },
+      { "pubkey": "11111111111111111111111111111111", "isSigner": true, "isWritable": false },
+      { "pubkey": "HJt8Tjdsc9ms9i4WCZEzhzr4oyf3ANcdzXrNdLPFqm3M", "isSigner": false, "isWritable": true },
+      { "pubkey": "JSvtokJbtGsYhneKomFBjnJh4djEQLdHV2kAeS43bBZ", "isSigner": false, "isWritable": true },
+      { "pubkey": "H1qQ6Hent1C5wa4Hc3GK2V1sgg4grvDBbmKd5H8dsTmo", "isSigner": false, "isWritable": true },
+      { "pubkey": "aqxoAhCwpy3oB1BpNw9hL1HdLYLgPpbPjzxDrrQj3Fs", "isSigner": false, "isWritable": true },
+      { "pubkey": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", "isSigner": false, "isWritable": false },
+      { "pubkey": "So11111111111111111111111111111111111111112", "isSigner": false, "isWritable": false },
+      { "pubkey": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA", "isSigner": false, "isWritable": false },
+      { "pubkey": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA", "isSigner": false, "isWritable": false },
+      { "pubkey": "D8cy77BBepLMngZx6ZukaTff5hCt1HrWyKk3Hnd9oitf", "isSigner": false, "isWritable": false },
+      { "pubkey": "JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4", "isSigner": false, "isWritable": false }
+    ],
+    "trailingAccountCount": 40
+  }
+}

@@ -1,0 +1,18 @@
+[
+  "action-errors.mjs",
+  "asset-registry.mjs",
+  "demo-funds.mjs",
+  "deployment-mode.mjs",
+  "devnet-asset-config.mjs",
+  "funding-deadline.mjs",
+  "index.html",
+  "main.js",
+  "portfolio-ux.mjs",
+  "priority-fee.mjs",
+  "public-key-utils.mjs",
+  "stock_split_phase0.json",
+  "styles.css",
+  "token-account-instructions.mjs",
+  "transaction-expiry.mjs",
+  "transaction-message.mjs"
+]

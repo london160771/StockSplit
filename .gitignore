@@ -1,0 +1,23 @@
+target/
+node_modules/
+.pnpm-store/
+.anchor/
+test-ledger/
+ledger/
+test-ledger-*/
+keys/
+devnet-mock-assets.json
+.env
+.env.*
+demo-faucet/data/
+
+# Solana private material and local runtime state
+**/id.json
+**/*-keypair.json
+**/buffer*.json
+**/wallet*.json
+*.pem
+*.key
+*.db
+*.sqlite
+*.sqlite3

@@ -1,0 +1,2062 @@
+{
+  "address": "9nLrXyjgLTwMxnyBJ2GnKqnHZiu5koYNHrpKXezVGDmm",
+  "metadata": {
+    "name": "stock_split_phase0",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "StockSplit Phase 0 PDA-controlled Token-2022 vault proof"
+  },
+  "instructions": [
+    {
+      "name": "cancel_portfolio",
+      "docs": [
+        "Terminates an undeployed Phase 1 portfolio. Contributors then reclaim",
+        "their own recorded USDC without creator involvement."
+      ],
+      "discriminator": [
+        134,
+        95,
+        74,
+        222,
+        106,
+        203,
+        112,
+        73
+      ],
+      "accounts": [
+        {
+          "name": "creator",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "portfolio",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  114,
+                  116,
+                  102,
+                  111,
+                  108,
+                  105,
+                  111
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "portfolio.creator",
+                "account": "Portfolio"
+              },
+              {
+                "kind": "account",
+                "path": "portfolio.portfolio_id",
+                "account": "Portfolio"
+              }
+            ]
+          }
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "close_funding",
+      "docs": [
+        "Freezes contributions and ownership units for the deployment phase."
+      ],
+      "discriminator": [
+        151,
+        114,
+        204,
+        37,
+        205,
+        230,
+        237,
+        154
+      ],
+      "accounts": [
+        {
+          "name": "creator",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "portfolio",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  114,
+                  116,
+                  102,
+                  111,
+                  108,
+                  105,
+                  111
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "portfolio.creator",
+                "account": "Portfolio"
+              },
+              {
+                "kind": "account",
+                "path": "portfolio.portfolio_id",
+                "account": "Portfolio"
+              }
+            ]
+          }
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "contribute",
+      "docs": [
+        "Moves Token-2022 USDC into the portfolio vault and issues matching units."
+      ],
+      "discriminator": [
+        82,
+        33,
+        68,
+        131,
+        32,
+        0,
+        205,
+        95
+      ],
+      "accounts": [
+        {
+          "name": "contributor",
+          "signer": true
+        },
+        {
+          "name": "portfolio",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  114,
+                  116,
+                  102,
+                  111,
+                  108,
+                  105,
+                  111
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "portfolio.creator",
+                "account": "Portfolio"
+              },
+              {
+                "kind": "account",
+                "path": "portfolio.portfolio_id",
+                "account": "Portfolio"
+              }
+            ]
+          }
+        },
+        {
+          "name": "member",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  101,
+                  109,
+                  98,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "portfolio"
+              },
+              {
+                "kind": "account",
+                "path": "contributor"
+              }
+            ]
+          }
+        },
+        {
+          "name": "mint"
+        },
+        {
+          "name": "source_token",
+          "writable": true
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "portfolio"
+              },
+              {
+                "kind": "account",
+                "path": "portfolio.usdc_mint",
+                "account": "Portfolio"
+              }
+            ]
+          }
+        },
+        {
+          "name": "token_program"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "create_portfolio",
+      "docs": [
+        "Creates a complete invite-only Phase 1 portfolio in DRAFT state."
+      ],
+      "discriminator": [
+        54,
+        26,
+        137,
+        113,
+        59,
+        182,
+        53,
+        225
+      ],
+      "accounts": [
+        {
+          "name": "creator",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "portfolio",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  114,
+                  116,
+                  102,
+                  111,
+                  108,
+                  105,
+                  111
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "creator"
+              },
+              {
+                "kind": "arg",
+                "path": "portfolio_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "usdc_mint"
+        },
+        {
+          "name": "token_program"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "portfolio_id",
+          "type": "u64"
+        },
+        {
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "name": "description",
+          "type": "string"
+        },
+        {
+          "name": "funding_start",
+          "type": "i64"
+        },
+        {
+          "name": "funding_deadline",
+          "type": "i64"
+        },
+        {
+          "name": "target_usdc",
+          "type": "u64"
+        },
+        {
+          "name": "basket",
+          "type": {
+            "vec": {
+              "defined": {
+                "name": "BasketAsset"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "deploy_demo_leg",
+      "discriminator": [
+        173,
+        67,
+        109,
+        225,
+        54,
+        3,
+        50,
+        153
+      ],
+      "accounts": [
+        {
+          "name": "caller",
+          "signer": true
+        },
+        {
+          "name": "portfolio",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  114,
+                  116,
+                  102,
+                  111,
+                  108,
+                  105,
+                  111
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "portfolio.creator",
+                "account": "Portfolio"
+              },
+              {
+                "kind": "account",
+                "path": "portfolio.portfolio_id",
+                "account": "Portfolio"
+              }
+            ]
+          }
+        },
+        {
+          "name": "input_mint",
+          "address": "HfstGSPF1MJsD8hrpYTcPhqT6uxXTvCFSeuBYLsZJ26J"
+        },
+        {
+          "name": "usdc_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "portfolio"
+              },
+              {
+                "kind": "account",
+                "path": "input_mint"
+              }
+            ]
+          }
+        },
+        {
+          "name": "output_mint"
+        },
+        {
+          "name": "output_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "portfolio"
+              },
+              {
+                "kind": "account",
+                "path": "output_mint"
+              }
+            ]
+          }
+        },
+        {
+          "name": "demo_authority",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  100,
+                  101,
+                  109,
+                  111,
+                  45,
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "demo_usdc_sink",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  100,
+                  101,
+                  109,
+                  111,
+                  45,
+                  115,
+                  105,
+                  110,
+                  107
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "input_mint"
+              }
+            ]
+          }
+        },
+        {
+          "name": "demo_output_liquidity",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  100,
+                  101,
+                  109,
+                  111,
+                  45,
+                  108,
+                  105,
+                  113,
+                  117,
+                  105,
+                  100,
+                  105,
+                  116,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "output_mint"
+              }
+            ]
+          }
+        },
+        {
+          "name": "token_program",
+          "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
+        }
+      ],
+      "args": [
+        {
+          "name": "basket_index",
+          "type": "u8"
+        },
+        {
+          "name": "expected_input_amount",
+          "type": "u64"
+        },
+        {
+          "name": "min_output_amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "deploy_leg",
+      "docs": [
+        "Executes exactly one fixed-allocation Jupiter/Metis route leg.",
+        "",
+        "The route instruction is built off-chain from Jupiter's Swap API V2",
+        "and invoked here as a CPI. The program controls the only user authority",
+        "accepted by the route: the portfolio PDA. A failed CPI or post-CPI",
+        "invariant leaves the leg pending because the transaction is atomic."
+      ],
+      "discriminator": [
+        69,
+        158,
+        69,
+        163,
+        152,
+        91,
+        245,
+        251
+      ],
+      "accounts": [
+        {
+          "name": "caller",
+          "docs": [
+            "Temporary Phase 2 execution gate. This is not a price oracle or a",
+            "long-term member-fund trust model; independent route/price",
+            "authorization is required before production deployment."
+          ],
+          "signer": true
+        },
+        {
+          "name": "portfolio",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  114,
+                  116,
+                  102,
+                  111,
+                  108,
+                  105,
+                  111
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "portfolio.creator",
+                "account": "Portfolio"
+              },
+              {
+                "kind": "account",
+                "path": "portfolio.portfolio_id",
+                "account": "Portfolio"
+              }
+            ]
+          }
+        },
+        {
+          "name": "input_mint"
+        },
+        {
+          "name": "usdc_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "portfolio"
+              },
+              {
+                "kind": "account",
+                "path": "portfolio.usdc_mint",
+                "account": "Portfolio"
+              }
+            ]
+          }
+        },
+        {
+          "name": "output_mint"
+        },
+        {
+          "name": "output_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "portfolio"
+              },
+              {
+                "kind": "account",
+                "path": "output_mint"
+              }
+            ]
+          }
+        },
+        {
+          "name": "token_program"
+        },
+        {
+          "name": "output_token_program"
+        },
+        {
+          "name": "jupiter_program"
+        }
+      ],
+      "args": [
+        {
+          "name": "basket_index",
+          "type": "u8"
+        },
+        {
+          "name": "expected_input_amount",
+          "type": "u64"
+        },
+        {
+          "name": "quoted_output_amount",
+          "type": "u64"
+        },
+        {
+          "name": "min_output_amount",
+          "type": "u64"
+        },
+        {
+          "name": "slippage_bps",
+          "type": "u16"
+        },
+        {
+          "name": "swap_data",
+          "type": "bytes"
+        }
+      ]
+    },
+    {
+      "name": "deposit",
+      "docs": [
+        "Deposits tokens from the signed wallet into the PDA-controlled vault."
+      ],
+      "discriminator": [
+        242,
+        35,
+        198,
+        137,
+        82,
+        225,
+        242,
+        182
+      ],
+      "accounts": [
+        {
+          "name": "depositor",
+          "signer": true
+        },
+        {
+          "name": "portfolio",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  114,
+                  116,
+                  102,
+                  111,
+                  108,
+                  105,
+                  111
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "portfolio.creator",
+                "account": "Portfolio"
+              },
+              {
+                "kind": "account",
+                "path": "portfolio.portfolio_id",
+                "account": "Portfolio"
+              }
+            ]
+          }
+        },
+        {
+          "name": "mint"
+        },
+        {
+          "name": "source_token",
+          "writable": true
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "portfolio"
+              },
+              {
+                "kind": "account",
+                "path": "mint"
+              }
+            ]
+          }
+        },
+        {
+          "name": "token_program"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "initialize_portfolio",
+      "docs": [
+        "Creates the Phase 0 portfolio PDA used as the authority for every vault.",
+        "",
+        "This is intentionally not the Phase 1 portfolio lifecycle instruction.",
+        "It only establishes the deterministic PDA authority needed to prove",
+        "custody before funding and ownership state are introduced."
+      ],
+      "discriminator": [
+        122,
+        177,
+        206,
+        169,
+        129,
+        85,
+        26,
+        192
+      ],
+      "accounts": [
+        {
+          "name": "creator",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "portfolio",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  114,
+                  116,
+                  102,
+                  111,
+                  108,
+                  105,
+                  111
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "creator"
+              },
+              {
+                "kind": "arg",
+                "path": "portfolio_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "portfolio_id",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "initialize_vault",
+      "docs": [
+        "Creates a deterministic vault for one configured USDC or basket mint."
+      ],
+      "discriminator": [
+        48,
+        191,
+        163,
+        44,
+        71,
+        129,
+        63,
+        164
+      ],
+      "accounts": [
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "portfolio",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  114,
+                  116,
+                  102,
+                  111,
+                  108,
+                  105,
+                  111
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "portfolio.creator",
+                "account": "Portfolio"
+              },
+              {
+                "kind": "account",
+                "path": "portfolio.portfolio_id",
+                "account": "Portfolio"
+              }
+            ]
+          }
+        },
+        {
+          "name": "mint"
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "portfolio"
+              },
+              {
+                "kind": "account",
+                "path": "mint"
+              }
+            ]
+          }
+        },
+        {
+          "name": "token_program"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "invite_member",
+      "docs": [
+        "Adds a wallet to the invite-only member set before funding closes."
+      ],
+      "discriminator": [
+        67,
+        227,
+        110,
+        3,
+        215,
+        2,
+        41,
+        203
+      ],
+      "accounts": [
+        {
+          "name": "creator",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "portfolio",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  114,
+                  116,
+                  102,
+                  111,
+                  108,
+                  105,
+                  111
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "portfolio.creator",
+                "account": "Portfolio"
+              },
+              {
+                "kind": "account",
+                "path": "portfolio.portfolio_id",
+                "account": "Portfolio"
+              }
+            ]
+          }
+        },
+        {
+          "name": "wallet"
+        },
+        {
+          "name": "member",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  101,
+                  109,
+                  98,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "portfolio"
+              },
+              {
+                "kind": "account",
+                "path": "wallet"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "open_funding",
+      "docs": [
+        "Opens the configured contribution window."
+      ],
+      "discriminator": [
+        255,
+        94,
+        231,
+        132,
+        50,
+        44,
+        163,
+        83
+      ],
+      "accounts": [
+        {
+          "name": "creator",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "portfolio",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  114,
+                  116,
+                  102,
+                  111,
+                  108,
+                  105,
+                  111
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "portfolio.creator",
+                "account": "Portfolio"
+              },
+              {
+                "kind": "account",
+                "path": "portfolio.portfolio_id",
+                "account": "Portfolio"
+              }
+            ]
+          }
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "prepare_demo_router",
+      "docs": [
+        "Devnet build only. Settles a fixed 1:1 raw-unit mock trade against",
+        "pre-funded, PDA-owned liquidity for one of four curated mock mints. Production builds omit",
+        "this instruction entirely; Jupiter deploy_leg is unchanged."
+      ],
+      "discriminator": [
+        118,
+        91,
+        231,
+        28,
+        75,
+        85,
+        191,
+        17
+      ],
+      "accounts": [
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "input_mint",
+          "address": "HfstGSPF1MJsD8hrpYTcPhqT6uxXTvCFSeuBYLsZJ26J"
+        },
+        {
+          "name": "output_mint"
+        },
+        {
+          "name": "demo_authority",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  100,
+                  101,
+                  109,
+                  111,
+                  45,
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "demo_usdc_sink",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  100,
+                  101,
+                  109,
+                  111,
+                  45,
+                  115,
+                  105,
+                  110,
+                  107
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "input_mint"
+              }
+            ]
+          }
+        },
+        {
+          "name": "demo_output_liquidity",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  100,
+                  101,
+                  109,
+                  111,
+                  45,
+                  108,
+                  105,
+                  113,
+                  117,
+                  105,
+                  100,
+                  105,
+                  116,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "output_mint"
+              }
+            ]
+          }
+        },
+        {
+          "name": "token_program",
+          "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "refund_member",
+      "docs": [
+        "Returns one member's exact recorded raw USDC contribution from the",
+        "canonical portfolio vault to that member's canonical USDC ATA."
+      ],
+      "discriminator": [
+        17,
+        1,
+        178,
+        160,
+        116,
+        190,
+        96,
+        59
+      ],
+      "accounts": [
+        {
+          "name": "member_wallet",
+          "signer": true
+        },
+        {
+          "name": "portfolio",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  114,
+                  116,
+                  102,
+                  111,
+                  108,
+                  105,
+                  111
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "portfolio.creator",
+                "account": "Portfolio"
+              },
+              {
+                "kind": "account",
+                "path": "portfolio.portfolio_id",
+                "account": "Portfolio"
+              }
+            ]
+          }
+        },
+        {
+          "name": "member",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  101,
+                  109,
+                  98,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "portfolio"
+              },
+              {
+                "kind": "account",
+                "path": "member_wallet"
+              }
+            ]
+          }
+        },
+        {
+          "name": "usdc_mint"
+        },
+        {
+          "name": "usdc_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "portfolio"
+              },
+              {
+                "kind": "account",
+                "path": "portfolio.usdc_mint",
+                "account": "Portfolio"
+              }
+            ]
+          }
+        },
+        {
+          "name": "destination_token",
+          "writable": true
+        },
+        {
+          "name": "token_program"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "withdraw",
+      "docs": [
+        "Phase 0 proof-only withdrawal.",
+        "",
+        "The creator must sign, but the token transfer is signed by the",
+        "portfolio PDA. Phase 1 will replace this proof-only authorization with",
+        "member-owned withdrawal accounting; no member accounting is present in",
+        "this Phase 0 program."
+      ],
+      "discriminator": [
+        183,
+        18,
+        70,
+        156,
+        148,
+        109,
+        161,
+        34
+      ],
+      "accounts": [
+        {
+          "name": "creator",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "portfolio",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  114,
+                  116,
+                  102,
+                  111,
+                  108,
+                  105,
+                  111
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "portfolio.creator",
+                "account": "Portfolio"
+              },
+              {
+                "kind": "account",
+                "path": "portfolio.portfolio_id",
+                "account": "Portfolio"
+              }
+            ]
+          }
+        },
+        {
+          "name": "mint"
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "portfolio"
+              },
+              {
+                "kind": "account",
+                "path": "mint"
+              }
+            ]
+          }
+        },
+        {
+          "name": "destination_token",
+          "writable": true
+        },
+        {
+          "name": "token_program"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "withdraw_member",
+      "docs": [
+        "Withdraws one member's proportional share of every current portfolio",
+        "vault, in kind. The member signs for their own exit; the portfolio PDA",
+        "signs each vault transfer."
+      ],
+      "discriminator": [
+        213,
+        70,
+        193,
+        100,
+        85,
+        184,
+        97,
+        155
+      ],
+      "accounts": [
+        {
+          "name": "member_wallet",
+          "signer": true
+        },
+        {
+          "name": "portfolio",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  114,
+                  116,
+                  102,
+                  111,
+                  108,
+                  105,
+                  111
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "portfolio.creator",
+                "account": "Portfolio"
+              },
+              {
+                "kind": "account",
+                "path": "portfolio.portfolio_id",
+                "account": "Portfolio"
+              }
+            ]
+          }
+        },
+        {
+          "name": "member",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  101,
+                  109,
+                  98,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "portfolio"
+              },
+              {
+                "kind": "account",
+                "path": "member_wallet"
+              }
+            ]
+          }
+        }
+      ],
+      "args": []
+    }
+  ],
+  "accounts": [
+    {
+      "name": "Member",
+      "discriminator": [
+        54,
+        19,
+        162,
+        21,
+        29,
+        166,
+        17,
+        198
+      ]
+    },
+    {
+      "name": "Portfolio",
+      "discriminator": [
+        94,
+        158,
+        71,
+        245,
+        122,
+        102,
+        110,
+        225
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "Token2022Required",
+      "msg": "This Phase 0 proof requires the Token-2022 program"
+    },
+    {
+      "code": 6001,
+      "name": "AmountMustBePositive",
+      "msg": "Token amount must be positive"
+    },
+    {
+      "code": 6002,
+      "name": "InvalidTokenAccount",
+      "msg": "Token account does not belong to the expected wallet or mint"
+    },
+    {
+      "code": 6003,
+      "name": "InvalidVault",
+      "msg": "Vault does not belong to this portfolio or mint"
+    },
+    {
+      "code": 6004,
+      "name": "Unauthorized",
+      "msg": "Only the portfolio creator may invoke the Phase 0 withdrawal proof"
+    },
+    {
+      "code": 6005,
+      "name": "MetadataTooLong",
+      "msg": "Portfolio metadata exceeds the supported account size"
+    },
+    {
+      "code": 6006,
+      "name": "InvalidFundingWindow",
+      "msg": "Funding start must be before the funding deadline"
+    },
+    {
+      "code": 6007,
+      "name": "InvalidTarget",
+      "msg": "Funding target must be positive"
+    },
+    {
+      "code": 6008,
+      "name": "InvalidBasket",
+      "msg": "Basket must contain between one and eight unique assets"
+    },
+    {
+      "code": 6009,
+      "name": "InvalidAllocation",
+      "msg": "Basket allocations must total exactly 10000 basis points"
+    },
+    {
+      "code": 6010,
+      "name": "DuplicateBasketAsset",
+      "msg": "Basket contains the same asset more than once"
+    },
+    {
+      "code": 6011,
+      "name": "ArithmeticOverflow",
+      "msg": "Arithmetic operation overflowed"
+    },
+    {
+      "code": 6012,
+      "name": "InvalidLifecycle",
+      "msg": "Portfolio is not in the required lifecycle state"
+    },
+    {
+      "code": 6013,
+      "name": "FundingNotOpen",
+      "msg": "Funding has not opened yet"
+    },
+    {
+      "code": 6014,
+      "name": "FundingWindowExpired",
+      "msg": "The funding deadline has passed"
+    },
+    {
+      "code": 6015,
+      "name": "FundingClosed",
+      "msg": "Funding is already closed"
+    },
+    {
+      "code": 6016,
+      "name": "TargetExceeded",
+      "msg": "The contribution would exceed the funding target"
+    },
+    {
+      "code": 6017,
+      "name": "FundingNotReadyToClose",
+      "msg": "The funding window is not ready to close"
+    },
+    {
+      "code": 6018,
+      "name": "InvalidMember",
+      "msg": "Invalid member wallet"
+    },
+    {
+      "code": 6019,
+      "name": "UnauthorizedMember",
+      "msg": "Wallet is not an invited member of this portfolio"
+    },
+    {
+      "code": 6020,
+      "name": "InvalidUsdcMint",
+      "msg": "The contribution mint does not match the portfolio USDC mint"
+    },
+    {
+      "code": 6021,
+      "name": "InvalidMintAccount",
+      "msg": "The mint account is invalid or cannot be decoded as a Token-2022 mint"
+    },
+    {
+      "code": 6022,
+      "name": "InvalidMintDecimals",
+      "msg": "The mint does not use the expected six decimals"
+    },
+    {
+      "code": 6023,
+      "name": "UnsupportedMintExtension",
+      "msg": "The mint uses an unsupported Token-2022 extension"
+    },
+    {
+      "code": 6024,
+      "name": "InvalidBasketMint",
+      "msg": "A declared basket mint account is missing or does not match the basket"
+    },
+    {
+      "code": 6025,
+      "name": "OwnershipAccountingInvariant",
+      "msg": "Portfolio ownership accounting invariant was violated"
+    },
+    {
+      "code": 6026,
+      "name": "VaultBalanceDecreased",
+      "msg": "The vault balance decreased during contribution settlement"
+    },
+    {
+      "code": 6027,
+      "name": "ContributionAmountMismatch",
+      "msg": "The vault did not receive exactly the requested contribution amount"
+    },
+    {
+      "code": 6028,
+      "name": "ZeroFundedClose",
+      "msg": "A portfolio with zero ownership units cannot close funding"
+    },
+    {
+      "code": 6029,
+      "name": "InvalidVaultMint",
+      "msg": "The vault mint is not the configured USDC or a declared basket mint"
+    },
+    {
+      "code": 6030,
+      "name": "LegacyEntrypointDisabled",
+      "msg": "This legacy Phase 0 entrypoint is disabled for Phase 1 portfolios"
+    },
+    {
+      "code": 6031,
+      "name": "TokenAccountUnavailable",
+      "msg": "The token account is frozen or otherwise unavailable"
+    },
+    {
+      "code": 6032,
+      "name": "TokenMintUnavailable",
+      "msg": "The token mint is paused or otherwise unavailable"
+    },
+    {
+      "code": 6033,
+      "name": "InvalidDeploymentLeg",
+      "msg": "The requested deployment leg is invalid"
+    },
+    {
+      "code": 6034,
+      "name": "DeploymentStateInvalid",
+      "msg": "Deployment state does not match the immutable basket"
+    },
+    {
+      "code": 6035,
+      "name": "DeploymentAlreadyCompleted",
+      "msg": "This deployment leg has already completed"
+    },
+    {
+      "code": 6036,
+      "name": "InvalidDeploymentAmount",
+      "msg": "The deployment input amount does not match recorded allocation"
+    },
+    {
+      "code": 6037,
+      "name": "SlippageTooHigh",
+      "msg": "Requested slippage exceeds the supported limit"
+    },
+    {
+      "code": 6038,
+      "name": "InvalidSlippageBounds",
+      "msg": "The quote and minimum output bounds are invalid"
+    },
+    {
+      "code": 6039,
+      "name": "InsufficientRecordedUsdc",
+      "msg": "The recorded USDC balance cannot fund this deployment leg"
+    },
+    {
+      "code": 6040,
+      "name": "InvalidSwapInstruction",
+      "msg": "The supplied instruction is not an approved Jupiter route instruction"
+    },
+    {
+      "code": 6041,
+      "name": "InvalidSwapAccounts",
+      "msg": "The supplied Jupiter route accounts are invalid"
+    },
+    {
+      "code": 6042,
+      "name": "InvalidSwapAuthority",
+      "msg": "The supplied Jupiter route authority is invalid"
+    },
+    {
+      "code": 6043,
+      "name": "InvalidSwapSource",
+      "msg": "The supplied Jupiter route source is invalid"
+    },
+    {
+      "code": 6044,
+      "name": "InvalidSwapDestination",
+      "msg": "The supplied Jupiter route destination is invalid"
+    },
+    {
+      "code": 6045,
+      "name": "InvalidSwapMint",
+      "msg": "The supplied swap mint is invalid"
+    },
+    {
+      "code": 6046,
+      "name": "JupiterSwapFailed",
+      "msg": "The Jupiter route CPI failed"
+    },
+    {
+      "code": 6047,
+      "name": "InputBalanceIncreased",
+      "msg": "The source vault balance increased during deployment"
+    },
+    {
+      "code": 6048,
+      "name": "OutputBalanceDecreased",
+      "msg": "The destination vault balance decreased during deployment"
+    },
+    {
+      "code": 6049,
+      "name": "InvalidExecutedInputAmount",
+      "msg": "The executed input amount did not match the intended amount"
+    },
+    {
+      "code": 6050,
+      "name": "SlippageExceeded",
+      "msg": "The executed swap output was below the protected minimum"
+    },
+    {
+      "code": 6051,
+      "name": "UnsupportedSwapProgram",
+      "msg": "The supplied swap program is not the approved Jupiter V6 program"
+    },
+    {
+      "code": 6052,
+      "name": "UnsupportedSwapFee",
+      "msg": "The supplied Jupiter V2 route uses a fee that this deployment does not authorize"
+    },
+    {
+      "code": 6053,
+      "name": "UnsupportedRoutePlanVariant",
+      "msg": "The supplied Jupiter route plan uses an unsupported swap payload variant"
+    },
+    {
+      "code": 6054,
+      "name": "InvalidWithdrawalAccounts",
+      "msg": "Withdrawal account order or privileges are invalid"
+    },
+    {
+      "code": 6055,
+      "name": "WithdrawalAlreadyCompleted",
+      "msg": "This member has already withdrawn from the portfolio"
+    },
+    {
+      "code": 6056,
+      "name": "DeploymentAlreadyStarted",
+      "msg": "A deployment leg has already executed; cancellation is unavailable"
+    },
+    {
+      "code": 6057,
+      "name": "RefundAlreadyCompleted",
+      "msg": "This member has already claimed the cancelled portfolio refund"
+    },
+    {
+      "code": 6058,
+      "name": "NoRefundAvailable",
+      "msg": "This member has no recorded USDC contribution to refund"
+    },
+    {
+      "code": 6059,
+      "name": "InvalidRefundState",
+      "msg": "The member state cannot claim a cancelled portfolio refund"
+    },
+    {
+      "code": 6060,
+      "name": "InvalidRefundDestination",
+      "msg": "Refund destination must be the member's canonical USDC account"
+    },
+    {
+      "code": 6061,
+      "name": "InsufficientRefundVaultBalance",
+      "msg": "The canonical USDC vault cannot cover the recorded refund"
+    },
+    {
+      "code": 6062,
+      "name": "RefundAmountMismatch",
+      "msg": "The refund did not move the exact recorded USDC amount"
+    }
+  ],
+  "types": [
+    {
+      "name": "BasketAsset",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "allocation_bps",
+            "type": "u16"
+          }
+        ]
+      }
+    },
+    {
+      "name": "DeploymentLeg",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "allocation_bps",
+            "type": "u16"
+          },
+          {
+            "name": "status",
+            "type": "u8"
+          },
+          {
+            "name": "input_amount",
+            "type": "u64"
+          },
+          {
+            "name": "output_amount",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Member",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "portfolio",
+            "type": "pubkey"
+          },
+          {
+            "name": "wallet",
+            "type": "pubkey"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "total_contributed",
+            "type": "u64"
+          },
+          {
+            "name": "ownership_units",
+            "type": "u64"
+          },
+          {
+            "name": "withdrawal_status",
+            "type": "u8"
+          },
+          {
+            "name": "phase2_reserved",
+            "type": "bytes"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Portfolio",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "creator",
+            "type": "pubkey"
+          },
+          {
+            "name": "portfolio_id",
+            "type": "u64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "status",
+            "type": "u8"
+          },
+          {
+            "name": "funding_start",
+            "type": "i64"
+          },
+          {
+            "name": "funding_deadline",
+            "type": "i64"
+          },
+          {
+            "name": "target_usdc",
+            "type": "u64"
+          },
+          {
+            "name": "usdc_mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "total_units",
+            "type": "u64"
+          },
+          {
+            "name": "total_contributed",
+            "type": "u64"
+          },
+          {
+            "name": "basket_locked",
+            "type": "bool"
+          },
+          {
+            "name": "ownership_locked",
+            "type": "bool"
+          },
+          {
+            "name": "funding_closed_at",
+            "type": "i64"
+          },
+          {
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "name": "description",
+            "type": "string"
+          },
+          {
+            "name": "basket",
+            "type": {
+              "vec": {
+                "defined": {
+                  "name": "BasketAsset"
+                }
+              }
+            }
+          },
+          {
+            "name": "deployment_legs",
+            "type": {
+              "vec": {
+                "defined": {
+                  "name": "DeploymentLeg"
+                }
+              }
+            }
+          },
+          {
+            "name": "phase2_reserved",
+            "type": "bytes"
+          }
+        ]
+      }
+    }
+  ]
+}

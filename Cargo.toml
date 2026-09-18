@@ -1,0 +1,8 @@
+[workspace]
+members = ["programs/stock_split_phase0", "programs/mock_jupiter_router"]
+resolver = "2"
+
+[profile.release]
+overflow-checks = true
+lto = "fat"
+codegen-units = 1

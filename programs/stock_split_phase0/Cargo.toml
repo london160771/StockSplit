@@ -1,0 +1,23 @@
+[package]
+name = "stock_split_phase0"
+version = "0.1.0"
+description = "StockSplit Phase 0 PDA-controlled Token-2022 vault proof"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "stock_split_phase0"
+
+[features]
+default = []
+cpi = ["no-entrypoint"]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+idl-build = ["anchor-lang/idl-build", "anchor-spl/idl-build"]
+devnet-demo = []
+
+[dependencies]
+anchor-lang = { version = "0.32.1", features = ["init-if-needed"] }
+anchor-spl = { version = "0.32.1", features = ["token_2022"] }
+spl-token-2022 = { version = "8.0.1", features = ["no-entrypoint"] }
