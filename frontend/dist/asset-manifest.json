@@ -4,6 +4,8 @@
   "demo-funds.mjs",
   "deployment-mode.mjs",
   "devnet-asset-config.mjs",
+  "favicon.ico",
+  "favicon.svg",
   "funding-deadline.mjs",
   "index.html",
   "main.js",
@@ -14,5 +16,6 @@
   "styles.css",
   "token-account-instructions.mjs",
   "transaction-expiry.mjs",
-  "transaction-message.mjs"
+  "transaction-message.mjs",
+  "wallet-session.mjs"
 ]

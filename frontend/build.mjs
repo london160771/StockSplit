@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 const frontendDir = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(frontendDir, "..");
 const distDir = path.join(frontendDir, "dist");
-const publicFiles = new Set(["index.html", "main.js", "styles.css"]);
+const publicFiles = new Set(["favicon.ico", "favicon.svg", "index.html", "main.js", "styles.css"]);
 const visitedModules = new Set();
 
 function includeLocalModules(relativeFile) {

@@ -26,6 +26,7 @@ import { FUNDING_ENDED_MESSAGE, fundingCloseLabel, fundingCountdown, fundingEnde
 import { friendlyActionError, isRefundAlreadyCompletedError, isWithdrawalAlreadyCompletedError } from "./action-errors.mjs";
 import { deploymentMode } from "./deployment-mode.mjs";
 import { memberRole, publicKeyEquals, publicKeyText } from "./public-key-utils.mjs";
+import { connectInjectedWallet, createWalletEventRegistry, injectedSolanaWallet } from "./wallet-session.mjs";
 import {
   COMPLEX_COMPUTE_UNIT_LIMIT,
   DEFAULT_COMPUTE_UNIT_LIMIT,
@@ -52,6 +53,7 @@ const STATUS = {
 };
 const STATUS_NAMES = ["DRAFT", "FUNDING", "FUNDING_CLOSED", "DEPLOYING", "ACTIVE", "CLOSED", "CANCELLED"];
 const STATUS_LABELS = ["Draft", "Funding open", "Funding ended", "Investing", "Active", "Closed", "Cancelled"];
+const walletEventRegistry = createWalletEventRegistry();
 
 function createDemoClaimState() {
   return { busy: false, status: "unknown", balance: null, amount: null, error: "", notice: "", signature: null };
@@ -325,8 +327,7 @@ function walletObject() {
 }
 
 function injectedWallet() {
-  const phantom = window.phantom?.solana || window.solana;
-  return phantom?.isPhantom ? phantom : null;
+  return injectedSolanaWallet(window);
 }
 
 async function initializeProgram() {
@@ -352,36 +353,51 @@ async function initializeProgram() {
 
 function attachWalletEvents(wallet) {
   if (!wallet?.on || state.walletEventProvider === wallet) return;
-  wallet.on("accountChanged", async (publicKey) => {
-    if (!publicKey) {
-      await disconnectWallet();
-      return;
-    }
-    state.walletPublicKey = canonicalPublicKey(publicKey);
-    state.demoFunds = createDemoFundsState(state.demoFunds.open);
-    state.manualNetworkConfirmation = false;
-    await refreshWalletNetwork();
-    await initializeProgram();
-    await refreshPortfolios();
-    if (state.network === "devnet") refreshDemoFunds().catch((error) => { state.demoFunds.error = error.message; render(); });
-    render();
-  });
-  for (const eventName of ["networkChanged", "chainChanged"]) {
-    wallet.on(eventName, async (value) => {
+  walletEventRegistry.attach(wallet, {
+    accountChanged: async (publicKey) => {
+      if (!publicKey) {
+        await disconnectWallet();
+        return;
+      }
+      state.walletPublicKey = canonicalPublicKey(publicKey);
+      state.demoFunds = createDemoFundsState(state.demoFunds.open);
+      state.manualNetworkConfirmation = false;
+      await refreshWalletNetwork();
+      await initializeProgram();
+      await refreshPortfolios();
+      if (state.network === "devnet") refreshDemoFunds().catch((error) => { state.demoFunds.error = error.message; render(); });
+      render();
+    },
+    networkChanged: async (value) => {
       await refreshWalletNetwork(value);
       if (state.network === "devnet") refreshDemoFunds().catch((error) => { state.demoFunds.error = error.message; render(); });
       render();
-    });
-  }
+    },
+    chainChanged: async (value) => {
+      await refreshWalletNetwork(value);
+      if (state.network === "devnet") refreshDemoFunds().catch((error) => { state.demoFunds.error = error.message; render(); });
+      render();
+    },
+  });
   state.walletEventProvider = wallet;
 }
 
-async function connectWallet() {
+async function connectWallet({ onlyIfTrusted = false, silent = false } = {}) {
   const wallet = injectedWallet();
-  if (!wallet) throw new Error("Phantom was not found. Install or enable the Phantom browser extension.");
-  const connectionResult = await wallet.connect();
+  if (!wallet) {
+    if (onlyIfTrusted) return false;
+    throw new Error("Phantom was not found. Install or enable the Phantom browser extension.");
+  }
+  let publicKey;
+  try {
+    publicKey = await connectInjectedWallet(wallet, { onlyIfTrusted });
+    if (!publicKey) throw new Error("Phantom did not provide a public key.");
+  } catch (error) {
+    if (onlyIfTrusted) return false;
+    throw error;
+  }
   state.walletProvider = wallet;
-  state.walletPublicKey = canonicalPublicKey(connectionResult?.publicKey || wallet.publicKey);
+  state.walletPublicKey = canonicalPublicKey(publicKey);
   state.demoFunds = createDemoFundsState(state.demoFunds.open);
   await refreshWalletNetwork();
   attachWalletEvents(wallet);
@@ -389,7 +405,8 @@ async function connectWallet() {
   state.view = "dashboard";
   await refreshPortfolios();
   if (state.network === "devnet") refreshDemoFunds().catch((error) => { state.demoFunds.error = error.message; render(); });
-  toast(`Connected ${shortKey(state.walletPublicKey.toBase58())}`);
+  if (!silent) toast(`Connected ${shortKey(state.walletPublicKey.toBase58())}`);
+  return true;
 }
 
 async function disconnectWallet() {
@@ -399,7 +416,6 @@ async function disconnectWallet() {
   state.walletNetwork = null;
   state.walletNetworkSource = "";
   state.manualNetworkConfirmation = false;
-  state.walletEventProvider = null;
   state.portfolios = [];
   state.selected = null;
   state.selectedMember = null;
@@ -1404,7 +1420,7 @@ function docsView() {
 
         <section id="docs-safety" class="card docs-section"><div class="docs-section-heading"><div><div class="section-label">Safety / guarantees</div><h2>Rules that protect the circle.</h2></div><span class="docs-audience">For everyone</span></div><div class="docs-safety-grid"><div class="docs-safety-item"><strong>Invite-only</strong><span>Only invited wallets can contribute.</span></div><div class="docs-safety-item"><strong>Clear controls</strong><span>Creator controls lifecycle steps where appropriate.</span></div><div class="docs-safety-item"><strong>Independent exits</strong><span>Members do not need creator approval to withdraw.</span></div><div class="docs-safety-item"><strong>Canonical vaults</strong><span>Transfers are bound to the portfolio’s configured assets and vaults.</span></div><div class="docs-safety-item"><strong>No duplicates</strong><span>Completed withdrawals and refunds cannot be repeated.</span></div><div class="docs-safety-item"><strong>No sweep</strong><span>The creator cannot take custody of member funds.</span></div><div class="docs-safety-item"><strong>Cancel boundary</strong><span>Cancellation is forbidden after deployment begins.</span></div><div class="docs-safety-item"><strong>Final close</strong><span>The last member withdrawal moves the portfolio to Closed.</span></div></div></section>
 
-        <section id="docs-technical" class="card docs-section"><details class="docs-technical" open><summary><div><div class="section-label">Technical details</div><h2>For technical judges</h2></div><span class="docs-summary-hint">Expand / collapse</span></summary><div class="docs-technical-body"><div class="docs-technical-grid"><div><span>Network</span><strong>Solana Devnet</strong></div><div><span>Program ID</span><code>9nLrXyjgLTwMxnyBJ2GnKqnHZiu5koYNHrpKXezVGDmm</code></div><div><span>Devnet contribution asset</span><strong>TEST-USDC · Token-2022 · 6 decimals</strong></div><div><span>Basket assets</span><strong>TEST-NVDAx · TEST-AAPLx · TEST-TSLAx · TEST-SPYx · Token-2022</strong></div></div><div class="docs-technical-summary"><strong>Architecture summary</strong><p>Anchor program, PDA-controlled portfolio and token vaults, invite/member accounts, fixed allocation basket, one deployment leg per transaction, deterministic Devnet demo settlement, and proportional in-kind member withdrawals. Ownership units use raw six-decimal accounting: 25 TEST-USDC = 25,000,000 raw units.</p></div><div class="docs-placeholder"><strong>GitHub repository</strong><span>Repository URL is not configured in this demo build.</span></div></div></details></section>
+        <section id="docs-technical" class="card docs-section"><details class="docs-technical" open><summary><div><div class="section-label">Technical details</div><h2>For technical judges</h2></div><span class="docs-summary-hint">Expand / collapse</span></summary><div class="docs-technical-body"><div class="docs-technical-grid"><div><span>Network</span><strong>Solana Devnet</strong></div><div><span>Program ID</span><code>9nLrXyjgLTwMxnyBJ2GnKqnHZiu5koYNHrpKXezVGDmm</code></div><div><span>Devnet contribution asset</span><strong>TEST-USDC · Token-2022 · 6 decimals</strong></div><div><span>Basket assets</span><strong>TEST-NVDAx · TEST-AAPLx · TEST-TSLAx · TEST-SPYx · Token-2022</strong></div></div><div class="docs-technical-summary"><strong>Architecture summary</strong><p>Anchor program, PDA-controlled portfolio and token vaults, invite/member accounts, fixed allocation basket, one deployment leg per transaction, deterministic Devnet demo settlement, and proportional in-kind member withdrawals. Ownership units use raw six-decimal accounting: 25 TEST-USDC = 25,000,000 raw units.</p></div><div class="docs-placeholder"><strong>Source code</strong><a class="docs-external-link" href="https://github.com/london160771/StockSplit" target="_blank" rel="noopener noreferrer">View source on GitHub ↗</a></div></div></details></section>
 
         <section id="docs-faq" class="card docs-section"><div class="docs-section-heading"><div><div class="section-label">FAQ</div><h2>Good questions are part of the product.</h2></div><span class="docs-audience">For users</span></div><div class="docs-faq"><details open><summary>Is this real money?</summary><p>Not in Devnet Demo Mode. TEST-USDC and the TEST-xStock assets are mock assets with no monetary value.</p></details><details><summary>Can the creator take my funds?</summary><p>No. Member ownership is recorded separately, vaults are controlled by the program, and there is no creator sweep path.</p></details><details><summary>Can I leave before others?</summary><p>Yes. Once the portfolio is Active, each eligible member can withdraw their proportional in-kind assets independently.</p></details><details><summary>What happens if the portfolio is cancelled?</summary><p>Before deployment starts, the creator can cancel. The portfolio becomes terminal and each contributing member can claim their exact recorded USDC refund.</p></details><details><summary>Why does Devnet use mock assets?</summary><p>The demo assets are operator-created Token-2022 mints without Jupiter liquidity. Deterministic settlement lets judges exercise the full flow safely.</p></details><details><summary>What is Devnet SOL used for?</summary><p>Devnet SOL pays transaction fees only. It is not deposited into a portfolio and has no investment value.</p></details><details><summary>What happens after the last member withdraws?</summary><p>Outstanding units reach zero and the portfolio becomes Closed.</p></details></div></section>
       </div>
@@ -1619,7 +1635,7 @@ function render() {
   const demoButton = state.network === "devnet" ? `<button class="demo-header-button" data-action="demo-funds-toggle" type="button">Demo Funds</button>` : "";
   const networkIndicator = `<span class="network-indicator" aria-label="Selected network: ${esc(networkShortLabel())}">${esc(networkShortLabel())}</span>`;
   const demoPanel = state.network === "devnet" && state.demoFunds.open ? `<div class="demo-panel">${demoFundsCard()}</div>` : "";
-  document.querySelector("#app").innerHTML = `<div class="shell"><header class="topbar"><a class="brand" href="#" data-action="home"><span class="brand-mark">ss</span><span class="brand-name">StockSplit</span><span class="brand-sub">shared ownership, made clear</span></a><nav class="nav"><button class="${state.view === "dashboard" ? "active" : ""}" data-action="dashboard">My portfolios</button><button class="${state.view === "create" ? "active" : ""}" data-action="create-view">Create</button><button class="${state.view === "docs" ? "active" : ""}" data-action="docs">Docs</button></nav><div class="top-actions"><select class="network-select" id="network-select" aria-label="Network" ${state.busy || demoFundsBusy() ? "disabled" : ""}>${Object.entries(NETWORKS).map(([key, value]) => `<option value="${key}" ${key === state.network ? "selected" : ""}>${value.label}</option>`).join("")}</select>${networkIndicator}${demoButton}<button class="wallet-button" data-action="wallet" ${demoFundsBusy() ? "disabled" : ""}>${esc(connectedLabel)}</button></div></header><main class="main">${demoPanel}${networkWarning}${state.error ? `<div class="error-banner">${esc(state.error)}${state.retryAction ? `<button class="button secondary" type="button" data-action="retry-expired">Try again with fresh blockhash</button>` : ""}${state.errorDetails ? `<details class="technical-details"><summary>Technical details</summary><pre>${esc(state.errorDetails)}</pre></details>` : ""}</div>` : ""}${state.notice ? `<div class="success-banner">${esc(state.notice)}</div>` : ""}${view}</main><footer class="footer">StockSplit · invite-only collaborative xStock portfolios · ${esc(networkConfig().label)}</footer></div>`;
+  document.querySelector("#app").innerHTML = `<div class="shell"><header class="topbar"><a class="brand" href="#" data-action="home"><span class="brand-mark">ss</span><span class="brand-name">StockSplit</span><span class="brand-sub">shared ownership, made clear</span></a><nav class="nav"><button class="${state.view === "dashboard" ? "active" : ""}" data-action="dashboard">My portfolios</button><button class="${state.view === "create" ? "active" : ""}" data-action="create-view">Create</button><button class="${state.view === "docs" ? "active" : ""}" data-action="docs">Docs</button></nav><div class="top-actions"><select class="network-select" id="network-select" aria-label="Network" ${state.busy || demoFundsBusy() ? "disabled" : ""}>${Object.entries(NETWORKS).map(([key, value]) => `<option value="${key}" ${key === state.network ? "selected" : ""}>${value.label}</option>`).join("")}</select>${networkIndicator}${demoButton}<button class="wallet-button" data-action="wallet" ${demoFundsBusy() ? "disabled" : ""}>${esc(connectedLabel)}</button></div></header><main class="main">${demoPanel}${networkWarning}${state.error ? `<div class="error-banner">${esc(state.error)}${state.retryAction ? `<button class="button secondary" type="button" data-action="retry-expired">Try again with fresh blockhash</button>` : ""}${state.errorDetails ? `<details class="technical-details"><summary>Technical details</summary><pre>${esc(state.errorDetails)}</pre></details>` : ""}</div>` : ""}${state.notice ? `<div class="success-banner">${esc(state.notice)}</div>` : ""}${view}</main><footer class="footer">StockSplit · invite-only collaborative xStock portfolios · ${esc(networkConfig().label)} · <a href="https://github.com/london160771/StockSplit" target="_blank" rel="noopener noreferrer">Source on GitHub ↗</a></footer></div>`;
   bindEvents();
   updateFundingClock();
 }
@@ -1713,7 +1729,8 @@ async function boot() {
   render();
   try {
     await initializeProgram();
-    await refreshPortfolios();
+    const restored = await connectWallet({ onlyIfTrusted: true, silent: true });
+    if (!restored) await refreshPortfolios();
     const queryPortfolio = new URLSearchParams(window.location.search).get("portfolio");
     if (queryPortfolio) await loadPortfolio(queryPortfolio);
   } catch (error) {

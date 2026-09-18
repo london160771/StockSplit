@@ -292,6 +292,8 @@ textarea.input { border-radius: 14px; min-height: 92px; resize: vertical; }
 .success-banner { background: var(--green-soft); border-radius: 14px; color: var(--green); font-size: 12px; line-height: 1.5; margin: 16px 0; padding: 13px 14px; }
 .tx-link { color: inherit; font-family: var(--mono); font-size: 10px; text-decoration: underline; word-break: break-all; }
 .footer { color: var(--muted); font-family: var(--mono); font-size: 10px; padding: 0 clamp(20px, 5vw, 76px) 30px; text-align: center; }
+.footer a, .docs-external-link { color: var(--green); text-decoration: underline; text-decoration-color: rgba(23,100,79,.28); text-underline-offset: 3px; }
+.footer a:hover, .docs-external-link:hover { text-decoration-color: currentColor; }
 #toast-region { bottom: 22px; display: grid; gap: 8px; max-width: min(390px, calc(100% - 30px)); position: fixed; right: 15px; z-index: 40; }
 .toast { animation: toast-in 260ms ease both; background: var(--ink); border-radius: 14px; box-shadow: var(--shadow); color: white; font-size: 12px; line-height: 1.45; padding: 14px 16px; }
 .toast.error { background: #7e4037; }
@@ -388,6 +390,7 @@ textarea.input { border-radius: 14px; min-height: 92px; resize: vertical; }
 .docs-placeholder { align-items: center; background: var(--paper-deep); border-radius: 12px; display: flex; flex-wrap: wrap; gap: 6px 15px; justify-content: space-between; margin-top: 20px; padding: 13px 15px; }
 .docs-placeholder strong { font-size: 12px; }
 .docs-placeholder span { color: var(--muted); font-size: 11px; }
+.docs-external-link { font-size: 11px; }
 .docs-faq { display: grid; }
 .docs-faq details { border-bottom: 1px solid var(--line); padding: 15px 0; }
 .docs-faq details:first-child { padding-top: 0; }
