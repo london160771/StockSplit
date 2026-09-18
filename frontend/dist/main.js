@@ -18,7 +18,7 @@ import {
 } from "https://esm.sh/@solana/spl-token@0.4.14?bundle&external=@solana/web3.js&target=es2022";
 import { compareMessageSemantics, selectWalletSignedTransaction, snapshotTransaction } from "./transaction-message.mjs";
 import { createWalletAtaInstruction } from "./token-account-instructions.mjs";
-import { ApprovalExpiredError, assertBlockhashActive } from "./transaction-expiry.mjs";
+import { ApprovalExpiredError, assertBlockhashActive, runWithFreshBlockhashRetry } from "./transaction-expiry.mjs";
 import { allVaultsReady, canCancelPortfolio, canClaimRefund, cancelPortfolioDiagnostics, isCanonicalVault, memberClaimRaw, memberHasWithdrawn, memberRefunded, portfolioInviteUrl } from "./portfolio-ux.mjs";
 import { TEST_USDC_MINT_ADDRESS, demoFundsAvailableForPortfolio, needsDemoFunds } from "./demo-funds.mjs";
 import { assetDetails, basketAssets, contributionAsset, contributionAssetLabel, displayAsset, isApprovedContributionMint, validateBasketSelection } from "./asset-registry.mjs";
@@ -522,94 +522,108 @@ async function sendInstructions(instructions, { computeUnitLimit = DEFAULT_COMPU
     computeUnitLimit,
     microLamports,
   );
-  // All validation, account derivation, instruction construction, and fee
-  // sampling are complete. This is the final RPC call before opening Phantom.
-  const latest = await connection.getLatestBlockhash("processed");
-  const transaction = new VersionedTransaction(
-    new TransactionMessage({
-      payerKey: payer,
-      recentBlockhash: latest.blockhash,
-      instructions: finalInstructions,
-    }).compileToV0Message(),
-  );
-  const requiredSigners = transaction.message.staticAccountKeys
-    .slice(0, transaction.message.header.numRequiredSignatures)
-    .map((key) => key.toBase58());
-  if (requiredSigners.length !== 1 || requiredSigners[0] !== payer.toBase58()) {
-    throw new Error(`Transaction construction requires unexpected external signers: ${requiredSigners.join(", ")}. Nothing was sent.`);
-  }
-  // Snapshot primitives before Phantom runs: some providers mutate the input
-  // transaction, while others return a new instance.
-  const unsigned = snapshotTransaction(transaction);
-
-  const walletResult = await walletProvider.signTransaction(transaction);
-  if (typeof walletResult?.serialize !== "function") {
-    throw new Error("The connected Solana wallet did not return a v0 transaction. Nothing was sent.");
-  }
-
-  if (
-    state.connection !== connection
-    || state.network !== selectedNetwork
-    || state.connection.rpcEndpoint !== rpcEndpoint
-    || state.walletProvider !== walletProvider
-    || state.walletNetwork !== selectedNetwork
-    || !walletProvider.publicKey
-    || !publicKeyEquals(canonicalPublicKey(walletProvider.publicKey), payer)
-    || !state.walletPublicKey
-    || !publicKeyEquals(canonicalPublicKey(state.walletPublicKey), payer)
-  ) {
-    throw new Error("Network or wallet account changed during approval. Transaction was not sent.");
-  }
-
-  let returnedTransaction;
-  try {
-    returnedTransaction = VersionedTransaction.deserialize(walletResult.serialize());
-  } catch {
-    throw new Error("Wallet returned an invalid versioned transaction");
-  }
-  const { transaction: signedTransaction } = selectWalletSignedTransaction(
-    unsigned, returnedTransaction, transaction,
-  );
-  const signed = snapshotTransaction(signedTransaction);
-  const messageDifferences = compareMessageSemantics(unsigned, signed);
-  if (messageDifferences.length) {
-    throw new Error(`Wallet changed transaction message fields: ${messageDifferences.join(", ")}`);
-  }
-  if (signed.message.recentBlockhash !== latest.blockhash) {
-    throw new Error("Wallet returned a transaction with a different blockhash");
-  }
-  if (signed.message.staticAccountKeys[0] !== payer.toBase58()) {
-    throw new Error("Transaction fee payer does not match the connected wallet");
-  }
-  await assertBlockhashActive(connection, latest.lastValidBlockHeight);
-  const simulation = await connection.simulateTransaction(signedTransaction, {
-    commitment: "processed",
-    sigVerify: true,
-  });
-  if (simulation.value.err) {
-    const logs = simulation.value.logs?.length ? ` Logs: ${simulation.value.logs.join(" | ")}` : "";
-    if (String(simulation.value.err).includes("BlockhashNotFound")) {
-      throw new ApprovalExpiredError();
+  const assertApprovalContext = () => {
+    if (
+      state.connection !== connection
+      || state.network !== selectedNetwork
+      || state.connection.rpcEndpoint !== rpcEndpoint
+      || state.walletProvider !== walletProvider
+      || state.walletNetwork !== selectedNetwork
+      || !walletProvider.publicKey
+      || !publicKeyEquals(canonicalPublicKey(walletProvider.publicKey), payer)
+      || !state.walletPublicKey
+      || !publicKeyEquals(canonicalPublicKey(state.walletPublicKey), payer)
+    ) {
+      throw new Error("Network or wallet account changed during approval. Transaction was not sent.");
     }
-    throw new Error(`Transaction simulation failed: ${JSON.stringify(simulation.value.err)}.${logs}`);
-  }
+  };
 
-  // Simulation itself consumes time. Never hand an expired signed message to
-  // the broadcaster; retry requires a fresh blockhash and a new wallet prompt.
-  await assertBlockhashActive(connection, latest.lastValidBlockHeight);
-  const signature = await connection.sendRawTransaction(signedTransaction.serialize(), {
-    skipPreflight: false,
-    preflightCommitment: "processed",
-    maxRetries: 3,
-  });
-  const confirmation = await connection.confirmTransaction(
-    { signature, blockhash: latest.blockhash, lastValidBlockHeight: latest.lastValidBlockHeight },
-    "confirmed",
+  // Every retry reuses the exact same instruction payload and accounts, but
+  // gets a new blockhash and a new explicit wallet approval.
+  return runWithFreshBlockhashRetry(
+    connection,
+    (latest) => {
+      assertApprovalContext();
+      const transaction = new VersionedTransaction(
+        new TransactionMessage({
+          payerKey: payer,
+          recentBlockhash: latest.blockhash,
+          instructions: finalInstructions,
+        }).compileToV0Message(),
+      );
+      const requiredSigners = transaction.message.staticAccountKeys
+        .slice(0, transaction.message.header.numRequiredSignatures)
+        .map((key) => key.toBase58());
+      if (requiredSigners.length !== 1 || requiredSigners[0] !== payer.toBase58()) {
+        throw new Error(`Transaction construction requires unexpected external signers: ${requiredSigners.join(", ")}. Nothing was sent.`);
+      }
+      return transaction;
+    },
+    async (transaction, latest) => {
+      // Snapshot primitives before Phantom runs: some providers mutate the
+      // input transaction, while others return a new instance.
+      const unsigned = snapshotTransaction(transaction);
+      const walletResult = await walletProvider.signTransaction(transaction);
+      if (typeof walletResult?.serialize !== "function") {
+        throw new Error("The connected Solana wallet did not return a v0 transaction. Nothing was sent.");
+      }
+
+      assertApprovalContext();
+
+      let returnedTransaction;
+      try {
+        returnedTransaction = VersionedTransaction.deserialize(walletResult.serialize());
+      } catch {
+        throw new Error("Wallet returned an invalid versioned transaction");
+      }
+      const { transaction: signedTransaction } = selectWalletSignedTransaction(
+        unsigned, returnedTransaction, transaction,
+      );
+      const signed = snapshotTransaction(signedTransaction);
+      const messageDifferences = compareMessageSemantics(unsigned, signed);
+      if (messageDifferences.length) {
+        throw new Error(`Wallet changed transaction message fields: ${messageDifferences.join(", ")}`);
+      }
+      if (signed.message.recentBlockhash !== latest.blockhash) {
+        throw new Error("Wallet returned a transaction with a different blockhash");
+      }
+      if (signed.message.staticAccountKeys[0] !== payer.toBase58()) {
+        throw new Error("Transaction fee payer does not match the connected wallet");
+      }
+      await assertBlockhashActive(connection, latest.lastValidBlockHeight);
+      const simulation = await connection.simulateTransaction(signedTransaction, {
+        commitment: "confirmed",
+        sigVerify: true,
+      });
+      if (simulation.value.err) {
+        const logs = simulation.value.logs?.length ? ` Logs: ${simulation.value.logs.join(" | ")}` : "";
+        if (String(simulation.value.err).includes("BlockhashNotFound")) {
+          throw new ApprovalExpiredError();
+        }
+        throw new Error(`Transaction simulation failed: ${JSON.stringify(simulation.value.err)}.${logs}`);
+      }
+
+      // Simulation itself consumes time. Never hand an expired signed message
+      // to the broadcaster; the retry helper will fetch a fresh blockhash and
+      // require another wallet approval.
+      await assertBlockhashActive(connection, latest.lastValidBlockHeight);
+      // Once broadcast is attempted, execution may be ambiguous. Never
+      // convert a send error into ApprovalExpiredError or retry automatically.
+      const signature = await connection.sendRawTransaction(signedTransaction.serialize(), {
+        skipPreflight: false,
+        preflightCommitment: "confirmed",
+        maxRetries: 3,
+      });
+      const confirmation = await connection.confirmTransaction(
+        { signature, blockhash: latest.blockhash, lastValidBlockHeight: latest.lastValidBlockHeight },
+        "confirmed",
+      );
+      if (confirmation.value.err) {
+        throw new Error(`Transaction confirmation failed: ${JSON.stringify(confirmation.value.err)}`);
+      }
+      return signature;
+    },
   );
-  if (confirmation.value.err) {
-    throw new Error(`Transaction confirmation failed: ${JSON.stringify(confirmation.value.err)}`);
-  }
-  return signature;
 }
 
 async function tokenProgramForMint(mint) {
@@ -1635,7 +1649,7 @@ function render() {
   const demoButton = state.network === "devnet" ? `<button class="demo-header-button" data-action="demo-funds-toggle" type="button">Demo Funds</button>` : "";
   const networkIndicator = `<span class="network-indicator" aria-label="Selected network: ${esc(networkShortLabel())}">${esc(networkShortLabel())}</span>`;
   const demoPanel = state.network === "devnet" && state.demoFunds.open ? `<div class="demo-panel">${demoFundsCard()}</div>` : "";
-  document.querySelector("#app").innerHTML = `<div class="shell"><header class="topbar"><a class="brand" href="#" data-action="home"><span class="brand-mark">ss</span><span class="brand-name">StockSplit</span><span class="brand-sub">shared ownership, made clear</span></a><nav class="nav"><button class="${state.view === "dashboard" ? "active" : ""}" data-action="dashboard">My portfolios</button><button class="${state.view === "create" ? "active" : ""}" data-action="create-view">Create</button><button class="${state.view === "docs" ? "active" : ""}" data-action="docs">Docs</button></nav><div class="top-actions"><select class="network-select" id="network-select" aria-label="Network" ${state.busy || demoFundsBusy() ? "disabled" : ""}>${Object.entries(NETWORKS).map(([key, value]) => `<option value="${key}" ${key === state.network ? "selected" : ""}>${value.label}</option>`).join("")}</select>${networkIndicator}${demoButton}<button class="wallet-button" data-action="wallet" ${demoFundsBusy() ? "disabled" : ""}>${esc(connectedLabel)}</button></div></header><main class="main">${demoPanel}${networkWarning}${state.error ? `<div class="error-banner">${esc(state.error)}${state.retryAction ? `<button class="button secondary" type="button" data-action="retry-expired">Try again with fresh blockhash</button>` : ""}${state.errorDetails ? `<details class="technical-details"><summary>Technical details</summary><pre>${esc(state.errorDetails)}</pre></details>` : ""}</div>` : ""}${state.notice ? `<div class="success-banner">${esc(state.notice)}</div>` : ""}${view}</main><footer class="footer">StockSplit · invite-only collaborative xStock portfolios · ${esc(networkConfig().label)} · <a href="https://github.com/london160771/StockSplit" target="_blank" rel="noopener noreferrer">Source on GitHub ↗</a></footer></div>`;
+  document.querySelector("#app").innerHTML = `<div class="shell"><header class="topbar"><a class="brand" href="#" data-action="home"><span class="brand-mark">ss</span><span class="brand-name">StockSplit</span><span class="brand-sub">shared ownership, made clear</span></a><nav class="nav"><button class="${state.view === "dashboard" ? "active" : ""}" data-action="dashboard">My portfolios</button><button class="${state.view === "create" ? "active" : ""}" data-action="create-view">Create</button><button class="${state.view === "docs" ? "active" : ""}" data-action="docs">Docs</button></nav><div class="top-actions"><select class="network-select" id="network-select" aria-label="Network" ${state.busy || demoFundsBusy() ? "disabled" : ""}>${Object.entries(NETWORKS).map(([key, value]) => `<option value="${key}" ${key === state.network ? "selected" : ""}>${value.label}</option>`).join("")}</select>${networkIndicator}${demoButton}<button class="wallet-button" data-action="wallet" ${demoFundsBusy() ? "disabled" : ""}>${esc(connectedLabel)}</button></div></header><main class="main">${demoPanel}${networkWarning}${state.error ? `<div class="error-banner">${esc(state.error)}${state.retryAction ? `<button class="button secondary" type="button" data-action="retry-expired">Approve fresh transaction</button>` : ""}${state.errorDetails ? `<details class="technical-details"><summary>Technical details</summary><pre>${esc(state.errorDetails)}</pre></details>` : ""}</div>` : ""}${state.notice ? `<div class="success-banner">${esc(state.notice)}</div>` : ""}${view}</main><footer class="footer">StockSplit · invite-only collaborative xStock portfolios · ${esc(networkConfig().label)} · <a href="https://github.com/london160771/StockSplit" target="_blank" rel="noopener noreferrer">Source on GitHub ↗</a></footer></div>`;
   bindEvents();
   updateFundingClock();
 }

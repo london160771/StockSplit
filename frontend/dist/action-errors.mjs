@@ -1,4 +1,5 @@
 import { FUNDING_ENDED_MESSAGE } from "./funding-deadline.mjs";
+import { APPROVAL_EXPIRED_MESSAGE } from "./transaction-expiry.mjs";
 
 export function isWithdrawalAlreadyCompletedError(error) {
   const raw = [error?.message, error?.logs?.join(" "), error?.code, error?.error?.errorCode?.code,
@@ -29,7 +30,7 @@ export function friendlyActionError(error, action = "") {
   if (/TargetExceeded/i.test(raw)) return "This contribution would exceed the portfolio target.";
   if (/UnauthorizedMember/i.test(raw)) return "This wallet is not invited to contribute to this portfolio.";
   if (/FundingNotOpen/i.test(raw)) return "Funding has not opened yet.";
-  if (/Approval took too long/i.test(raw)) return "Approval took too long. Please approve the new transaction promptly.";
+  if (/Approval took too long|approval window expired/i.test(raw)) return APPROVAL_EXPIRED_MESSAGE;
   if (/Wallet changed transaction message|Network or wallet account changed/i.test(raw)) return "The wallet or network changed during approval. Review the transaction and try again.";
   if (/deploy|invest/i.test(action)) return "Investment could not be completed. Try again.";
   if (/simulation|Program log:|SendTransactionError|custom program error|logs:/i.test(raw)) return "Transaction could not be completed. Please try again.";
